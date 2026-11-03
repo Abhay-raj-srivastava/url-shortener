@@ -1,0 +1,162 @@
+{
+  "title": "URL Shortener — Service Dashboard",
+  "uid": "url-shortener-main",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "tags": ["url-shortener", "java", "spring-boot"],
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(up{job=\"url-shortener\"}, instance)",
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application=\"url-shortener\"}[1m])",
+          "legendFormat": "{{method}} {{uri}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Response Time — p50 / p95 / p99 (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{application=\"url-shortener\"}[5m])) * 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{application=\"url-shortener\"}[5m])) * 1000",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{application=\"url-shortener\"}[5m])) * 1000",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application=\"url-shortener\",status=~\"5..\"}[5m]) / rate(http_server_requests_seconds_count{application=\"url-shortener\"}[5m]) * 100",
+          "legendFormat": "5xx error rate %"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "URLs Shortened (total)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+      "targets": [
+        {
+          "expr": "url_shortener_urls_created_total{application=\"url-shortener\"}",
+          "legendFormat": "Total URLs shortened"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Total Redirects",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+      "targets": [
+        {
+          "expr": "url_shortener_urls_redirected_total{application=\"url-shortener\"}",
+          "legendFormat": "Total redirects"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "JVM Heap Usage",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{application=\"url-shortener\",area=\"heap\"} / jvm_memory_max_bytes{application=\"url-shortener\",area=\"heap\"} * 100",
+          "legendFormat": "Heap %"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Redis Cache Hit Rate (%)",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 60 },
+              { "color": "green", "value": 80 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(cache_gets_total{application=\"url-shortener\",result=\"hit\"}[5m]) / rate(cache_gets_total{application=\"url-shortener\"}[5m]) * 100",
+          "legendFormat": "Cache hit rate %"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Active Database Connections",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"url-shortener\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{application=\"url-shortener\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections_pending{application=\"url-shortener\"}",
+          "legendFormat": "Pending"
+        }
+      ]
+    }
+  ]
+}

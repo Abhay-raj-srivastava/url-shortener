@@ -1,0 +1,68 @@
+# =============================================================
+#  Prometheus Configuration
+#
+#  Scrapes metrics from:
+#  - The URL Shortener application (/actuator/prometheus)
+#  - Prometheus itself (self-monitoring)
+#
+#  In Kubernetes, the application pods expose metrics on port 8080.
+#  The prometheus.io/scrape annotation on the Deployment tells
+#  Prometheus (with kubernetes_sd_configs) to auto-discover pods.
+#  That setup is in the kubernetes section below.
+# =============================================================
+
+global:
+  scrape_interval:     15s   # scrape every 15 seconds
+  evaluation_interval: 15s   # evaluate alerting rules every 15 seconds
+  scrape_timeout:      10s
+
+  # Labels added to every time series
+  external_labels:
+    monitor: 'url-shortener-monitor'
+    environment: 'local'
+
+# ── Alerting rules ────────────────────────────────────────────
+rule_files:
+  - "alerts/*.yml"
+
+# ── Scrape configurations ─────────────────────────────────────
+scrape_configs:
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # URL Shortener application — Docker Compose (static target)
+  - job_name: 'url-shortener'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['app:8080']
+        labels:
+          application: 'url-shortener'
+          environment: 'local'
+
+  # URL Shortener — Kubernetes pod auto-discovery
+  # Uncomment this block when deploying to Kubernetes.
+  # Prometheus must have ClusterRole permission to list/watch pods.
+  #
+  # - job_name: 'url-shortener-k8s'
+  #   metrics_path: '/actuator/prometheus'
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #       namespaces:
+  #         names: ['url-shortener']
+  #   relabel_configs:
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  #       action: keep
+  #       regex: true
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+  #       action: replace
+  #       target_label: __metrics_path__
+  #       regex: (.+)
+  #     - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+  #       action: replace
+  #       regex: ([^:]+)(?::\d+)?;(\d+)
+  #       replacement: $1:$2
+  #       target_label: __address__

@@ -1,0 +1,77 @@
+# =============================================================
+#  Prometheus Alerting Rules — URL Shortener
+# =============================================================
+
+groups:
+  - name: url_shortener_alerts
+    interval: 30s
+    rules:
+
+      # Application is down
+      - alert: UrlShortenerDown
+        expr: up{job="url-shortener"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "URL Shortener is down"
+          description: "The URL Shortener application has been unreachable for more than 1 minute."
+
+      # High error rate (5xx responses > 5% of requests)
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{application="url-shortener", status=~"5.."}[5m])
+            /
+            rate(http_server_requests_seconds_count{application="url-shortener"}[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: "More than 5% of requests are returning 5xx errors over the last 5 minutes."
+
+      # Slow redirect responses (p95 > 200ms)
+      - alert: SlowRedirects
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_server_requests_seconds_bucket{
+              application="url-shortener",
+              uri="/{shortCode}"
+            }[5m])
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redirect p95 latency is above 200ms"
+          description: "The 95th percentile redirect response time has exceeded 200ms for 5 minutes."
+
+      # High JVM heap usage
+      - alert: HighHeapUsage
+        expr: |
+          (
+            jvm_memory_used_bytes{application="url-shortener", area="heap"}
+            /
+            jvm_memory_max_bytes{application="url-shortener", area="heap"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage above 85%"
+          description: "Heap usage has been above 85% for 5 minutes. Consider increasing memory or investigating leaks."
+
+      # Redis connection issues
+      - alert: RedisConnectionFailure
+        expr: |
+          increase(cache_gets_total{application="url-shortener", result="miss"}[5m]) > 100
+          and
+          rate(http_server_requests_seconds_count{application="url-shortener", uri="/api/v1/urls"}[5m]) < 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Possible Redis connectivity issue"
+          description: "High cache miss rate with low API activity may indicate Redis connectivity problems."
