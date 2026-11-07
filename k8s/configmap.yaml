@@ -1,0 +1,20 @@
+# =============================================================
+#  ConfigMap — non-sensitive application configuration.
+#  Sensitive values (passwords, connection strings) go in Secret.
+# =============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: url-shortener-config
+  namespace: url-shortener
+  labels:
+    app.kubernetes.io/name: url-shortener
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  REDIS_PORT: "6379"
+  APP_BASE_URL: "https://your-domain.com"
+  APP_DEFAULT_TTL_DAYS: "30"
+  APP_SHORT_CODE_LENGTH: "7"
+  APP_CACHE_REDIRECT_TTL_SECONDS: "3600"
+  # Point Prometheus scraping at the Actuator endpoint
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,prometheus"

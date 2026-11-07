@@ -1,0 +1,11 @@
+# =============================================================
+#  Kubernetes Namespace
+#  Isolates all URL Shortener resources from other workloads.
+# =============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: url-shortener
+  labels:
+    app.kubernetes.io/name: url-shortener
+    app.kubernetes.io/managed-by: kubectl

@@ -1,0 +1,50 @@
+# =============================================================
+#  Ingress — NGINX Ingress Controller
+#
+#  Routes external HTTP/HTTPS traffic to the application.
+#  TLS is terminated at the Ingress; traffic inside the cluster
+#  travels over plain HTTP to the service.
+#
+#  Prerequisites:
+#  - NGINX Ingress Controller installed (kubectl apply -f
+#    https://raw.githubusercontent.com/kubernetes/ingress-nginx/
+#    controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml)
+#  - cert-manager installed for automatic TLS certificate renewal
+#  - DNS A record for your-domain.com pointing to the Ingress
+#    controller's LoadBalancer IP
+# =============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: url-shortener-ingress
+  namespace: url-shortener
+  labels:
+    app.kubernetes.io/name: url-shortener
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Redirect HTTP → HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Rate limiting — 100 requests/second per IP
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # Client body size (for URL request bodies, 1m is plenty)
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    # cert-manager: automatically provision & renew TLS certificates
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - your-domain.com
+      secretName: url-shortener-tls
+  rules:
+    - host: your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: url-shortener-svc
+                port:
+                  number: 80

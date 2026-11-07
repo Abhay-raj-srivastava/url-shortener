@@ -1,0 +1,15 @@
+# =============================================================
+#  PodDisruptionBudget
+#  Ensures at least 2 replicas stay running during voluntary
+#  disruptions (node drains, rolling upgrades, etc.).
+# =============================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: url-shortener-pdb
+  namespace: url-shortener
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: url-shortener

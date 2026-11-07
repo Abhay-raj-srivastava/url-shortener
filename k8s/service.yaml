@@ -1,0 +1,21 @@
+# =============================================================
+#  Service — ClusterIP (internal)
+#  Exposes the application to other pods within the cluster.
+#  External traffic is handled by the Ingress below.
+# =============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: url-shortener-svc
+  namespace: url-shortener
+  labels:
+    app.kubernetes.io/name: url-shortener
+spec:
+  type: ClusterIP
+  selector:
+    app: url-shortener
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

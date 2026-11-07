@@ -1,0 +1,54 @@
+# =============================================================
+#  HorizontalPodAutoscaler
+#
+#  Automatically scales the Deployment between 3 and 10 replicas
+#  based on CPU utilisation.
+#
+#  Why CPU-based scaling for a URL shortener?
+#  - The redirect path is CPU-bound (Redis lookup + HTTP response).
+#  - At high traffic the CPU will saturate before memory does.
+#  - A target of 70% leaves headroom for traffic spikes before
+#    new pods are fully ready.
+#
+#  For even more responsive scaling, add a custom metric based on
+#  requests-per-second from Prometheus (requires KEDA or the
+#  Prometheus Adapter).
+# =============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: url-shortener-hpa
+  namespace: url-shortener
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: url-shortener
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300   # wait 5 min before scaling down
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
