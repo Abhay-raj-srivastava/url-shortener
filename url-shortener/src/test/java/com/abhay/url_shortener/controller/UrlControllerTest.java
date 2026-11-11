@@ -100,7 +100,7 @@ class UrlControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode")).value("VALIDATION_ERROR"));
+                    .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
         }
 
         @Test
@@ -131,7 +131,7 @@ class UrlControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.errorCode")).value("ALIAS_ALREADY_EXISTS"));
+                    .andExpect(jsonPath("$.errorCode").value("ALIAS_ALREADY_EXISTS"));
         }
 
         @Test
@@ -147,7 +147,7 @@ class UrlControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.error_code").value("INVALID_URL"));
+                    .andExpect(jsonPath("$.errorCode").value("INVALID_URL"));
         }
     }
 
@@ -176,7 +176,7 @@ class UrlControllerTest {
 
             mockMvc.perform(get("/" + SHORT_CODE))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.error_code").value("URL_NOT_FOUND"));
+                    .andExpect(jsonPath("$.errorCode").value("URL_NOT_FOUND"));
         }
 
         @Test
@@ -186,7 +186,7 @@ class UrlControllerTest {
 
             mockMvc.perform(get("/" + SHORT_CODE))
                     .andExpect(status().isGone())
-                    .andExpect(jsonPath("$.error_code").value("URL_EXPIRED"));
+                    .andExpect(jsonPath("$.errorCode").value("URL_EXPIRED"));
         }
     }
 
